@@ -2,19 +2,20 @@ subroutine thermostat(p,T,matom,info)
 use inputdata
 use parameters
 implicit none
-real *8 p(3,natoms,nbeads),T,matom(natoms)
+real *8 p(3,natoms,nbeads),T,matom(natoms),zpe,tem
 interger :: i,j,k,nstep,info
 
 
 do k=1,nbeads
 	do i=1,ngas
-		qbead(:,i,k)=posi_start(:,i)
+		qbead(:,i,k)=posi_start(:,i)/C4
 	enddo
 	do j=1+ngas,natoms
-		qbead(:,j,K)=posi_start(:,j)
+		qbead(:,j,K)=posi_start(:,j)/C4
 	enddo
 enddo
-
+open(100,file="samle.dat")
+open(200,file="thermostat.dat")
 Nsteps=Nequal+numtraj*step_sample
 do nstep=1,Nsteps
 	call RPMD_VERLET()
@@ -24,6 +25,9 @@ do nstep=1,Nsteps
 	if(info.eq.0) then
 		if(mod(nstep,nnequal).eq.0) then
 			call sample_bead_momentum()
+			call get_ZPE(zpe)
+			call get_temperature(tem)
+			write(333,'(I4,f18.10)')nstep,tem,zpe
 		endif
 	endif
 	
@@ -32,10 +36,13 @@ do nstep=1,Nsteps
 		Ntraj=Ntraj+1
 		initq(:,:,:,ntraj)=qbead(:,:,:)
 		initp(:,:,:,ntraj)=pbead(:,:,:)
+		call get_ZPE(zpe)
+		call get_temperature(tem)	
+		write(100,'(I4,2f18.10)')Ntraj,tem,zpe
 	endif
 	
 enddo
-
+close(100)
 
 end subroutine thermostat
 
@@ -101,4 +108,12 @@ do j=1,natoms
 enddo
 
 end subroutine shift
+
+subroutine autocorrelation(temper,N,coefficient)
+implicit none
+integer *4 N,i,j,k
+real *8 temper(2*N),coefficient
+do i=1,N
+	
+
 
